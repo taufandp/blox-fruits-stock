@@ -254,11 +254,8 @@ try:
                     
                     st.markdown(f"#### {fruit.get('name', 'Fruit')}")
                     st.caption(f"Type: **{fruit.get('type', 'Natural')}**")
-                    
-                    beli = fruit.get("price_beli", 0)
-                    robux = fruit.get("price_robux", 0)
-                    st.write(f"💰 **{beli:,} Beli**")
-                    st.write(f"🪙 **{robux:,} Robux**")
+                    st.write(f"💰 **{fruit.get('price_beli', 0):,} Beli**")
+                    st.write(f"🪙 **{fruit.get('price_robux', 0):,} Robux**")
 
     with tab_norm:
         display_fruits(normal_stock, is_history=False)
@@ -289,23 +286,26 @@ try:
                     st.error("Please enter a message before sending!")
                 else:
                     payload = {
+                        "access_key": "0da08451-82fe-4f81-9875-aa6627d4b3fd",
                         "name": sender_name.strip() or "Anonymous Blox Fruits Player",
                         "email": sender_email.strip() or "no-reply@example.com",
                         "message": sender_msg.strip(),
-                        "_subject": f"🏴‍☠️ Blox Fruits Tracker Message from {sender_name.strip() or 'Visitor'}"
+                        "subject": f"🏴‍☠️ Blox Fruits Tracker Message from {sender_name.strip() or 'Visitor'}"
                     }
                     try:
                         resp = requests.post(
-                            "https://formsubmit.co/ajax/bloxfruitstockadmin@gmail.com",
+                            "https://api.web3forms.com/submit",
                             json=payload,
-                            headers={"Accept": "application/json"}
+                            headers={"Accept": "application/json"},
+                            timeout=10
                         )
-                        if resp.status_code == 200:
+                        res_data = resp.json()
+                        if resp.status_code == 200 and res_data.get("success"):
                             st.success("🎉 Message sent directly to the Admin's inbox! Thanks for reaching out.")
                         else:
-                            st.error("Could not send message right now. Please try again later.")
+                            st.error(f"Error: {res_data.get('message', 'Could not send message')}")
                     except Exception as err:
-                        st.error(f"Error sending message: {err}")
+                        st.error(f"Network error: {err}")
 
     st.markdown('<div class="footer">Made with 🔥 • Created by a 6A student • Powered by Argon</div>', unsafe_allow_html=True)
 
