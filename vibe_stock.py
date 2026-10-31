@@ -120,7 +120,7 @@ try:
     if not isinstance(normal_stock, list): normal_stock = []
     if not isinstance(mirage_stock, list): mirage_stock = []
 
-    # --- HISTORICAL / LAST STOCK CACHE ENGINE ---
+    # Historical Session Logic
     if "last_normal_stock" not in st.session_state:
         st.session_state.last_normal_stock = []
         st.session_state.last_normal_time = "Initial Load"
@@ -136,7 +136,6 @@ try:
     norm_fp = json.dumps([f.get("name") for f in normal_stock if isinstance(f, dict)])
     mir_fp = json.dumps([f.get("name") for f in mirage_stock if isinstance(f, dict)])
 
-    # Stock rotation detection
     if st.session_state.current_normal_fingerprint and st.session_state.current_normal_fingerprint != norm_fp:
         st.session_state.last_normal_stock = st.session_state.current_normal_cache
         st.session_state.last_normal_time = time.strftime("%H:%M UTC")
@@ -219,13 +218,12 @@ try:
 
     st.divider()
 
-    # 4 Dynamic Tabs: Live vs Last Stock
-    tab_norm, tab_mir, tab_last_norm, tab_last_mir, tab_raw = st.tabs([
+    tab_norm, tab_mir, tab_last_norm, tab_last_mir, tab_contact = st.tabs([
         f"🏪 Current Normal ({len(normal_stock)})",
         f"✨ Current Mirage ({len(mirage_stock)})",
         f"📜 Last Normal Stock ({len(st.session_state.last_normal_stock)})",
         f"📜 Last Mirage Stock ({len(st.session_state.last_mirage_stock)})",
-        "🛠️ API Inspector"
+        "✉️ Message Admin"
     ])
 
     def display_fruits(fruit_list, is_history=False):
@@ -276,8 +274,38 @@ try:
         st.caption(f"Recorded rotation timestamp: `{st.session_state.last_mirage_time}`")
         display_fruits(st.session_state.last_mirage_stock, is_history=True)
 
-    with tab_raw:
-        st.json(raw_data)
+    with tab_contact:
+        st.subheader("📬 Send a Message to the Admin")
+        st.caption("Got a fruit stock suggestion, spotted a bug, or just want to say hi? Send me a message below!")
+        
+        with st.form("contact_form"):
+            sender_name = st.text_input("Your Name / Roblox Username:", placeholder="e.g. BloxMaster99")
+            sender_email = st.text_input("Your Email (optional, so I can reply back):", placeholder="yourname@gmail.com")
+            sender_msg = st.text_area("Your Message:", placeholder="Type your message here...", height=120)
+            submitted = st.form_submit_button("🚀 Send to Admin", use_container_width=True)
+
+            if submitted:
+                if not sender_msg.strip():
+                    st.error("Please enter a message before sending!")
+                else:
+                    payload = {
+                        "name": sender_name.strip() or "Anonymous Blox Fruits Player",
+                        "email": sender_email.strip() or "no-reply@example.com",
+                        "message": sender_msg.strip(),
+                        "_subject": f"🏴‍☠️ Blox Fruits Tracker Message from {sender_name.strip() or 'Visitor'}"
+                    }
+                    try:
+                        resp = requests.post(
+                            "https://formsubmit.co/ajax/bloxfruitstockadmin@gmail.com",
+                            json=payload,
+                            headers={"Accept": "application/json"}
+                        )
+                        if resp.status_code == 200:
+                            st.success("🎉 Message sent directly to the Admin's inbox! Thanks for reaching out.")
+                        else:
+                            st.error("Could not send message right now. Please try again later.")
+                    except Exception as err:
+                        st.error(f"Error sending message: {err}")
 
     st.markdown('<div class="footer">Made with 🔥 • Created by a 6A student • Powered by Argon</div>', unsafe_allow_html=True)
 
