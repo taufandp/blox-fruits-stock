@@ -120,7 +120,6 @@ try:
     if not isinstance(normal_stock, list): normal_stock = []
     if not isinstance(mirage_stock, list): mirage_stock = []
 
-    # Historical Session Logic
     if "last_normal_stock" not in st.session_state:
         st.session_state.last_normal_stock = []
         st.session_state.last_normal_time = "Initial Load"
@@ -275,7 +274,6 @@ try:
         st.subheader("📬 Send a Message to the Admin")
         st.caption("Got a fruit stock suggestion, spotted a bug, or just want to say hi? Send me a message below!")
         
-        # Client-Side Form: Submits directly from browser via Web3Forms
         contact_html = """
         <!DOCTYPE html>
         <html>
@@ -296,14 +294,17 @@ try:
         <body>
             <div class="form-box">
                 <form id="contactForm">
+                    <!-- Anti-spam Honeypot: invisible to humans, catches bots -->
+                    <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
                     <label>Your Name / Roblox Username:</label>
                     <input type="text" id="senderName" placeholder="e.g. BloxMaster99" required />
 
-                    <label>Your Email (optional):</label>
-                    <input type="email" id="senderEmail" placeholder="yourname@gmail.com" />
+                    <label>Your Real Email:</label>
+                    <input type="email" id="senderEmail" placeholder="yourname@gmail.com" required />
 
                     <label>Your Message:</label>
-                    <textarea id="senderMsg" rows="4" placeholder="Type your message here..." required></textarea>
+                    <textarea id="senderMsg" rows="4" placeholder="Write a real sentence (avoid just typing 'test')..." required></textarea>
 
                     <button type="submit" id="submitBtn">🚀 Send to Admin</button>
                     <div id="status-msg"></div>
@@ -321,12 +322,17 @@ try:
                     btn.innerText = "Sending...";
                     statusMsg.style.display = "none";
 
+                    const emailVal = document.getElementById('senderEmail').value.trim();
+                    const nameVal = document.getElementById('senderName').value.trim();
+                    const msgVal = document.getElementById('senderMsg').value.trim();
+
                     const payload = {
                         access_key: "0da08451-82fe-4f81-9875-aa6627d4b3fd",
-                        name: document.getElementById('senderName').value.trim() || "Anonymous Player",
-                        email: document.getElementById('senderEmail').value.trim() || "no-reply@example.com",
-                        message: document.getElementById('senderMsg').value.trim(),
-                        subject: "🏴‍☠️ Blox Fruits Tracker Message"
+                        name: nameVal,
+                        email: emailVal,
+                        message: msgVal,
+                        subject: "Blox Fruits Tracker Message from " + nameVal,
+                        from_name: "Blox Fruits Tracker"
                     };
 
                     try {
@@ -342,17 +348,17 @@ try:
                         const result = await response.json();
                         if (result.success) {
                             statusMsg.className = "status-ok";
-                            statusMsg.innerText = "🎉 Message delivered directly to the Admin's inbox!";
+                            statusMsg.innerText = "🎉 Message delivered directly to Admin!";
                             statusMsg.style.display = "block";
                             form.reset();
                         } else {
                             statusMsg.className = "status-err";
-                            statusMsg.innerText = "❌ Error: " + (result.message || "Failed to send");
+                            statusMsg.innerText = "❌ " + (result.message || "Failed to send");
                             statusMsg.style.display = "block";
                         }
                     } catch (err) {
                         statusMsg.className = "status-err";
-                        statusMsg.innerText = "❌ Connection failed. Check your internet connection.";
+                        statusMsg.innerText = "❌ Network error. Check your connection.";
                         statusMsg.style.display = "block";
                     } finally {
                         btn.disabled = false;
@@ -363,7 +369,7 @@ try:
         </body>
         </html>
         """
-        components.html(contact_html, height=430)
+        components.html(contact_html, height=450)
 
     st.markdown('<div class="footer">Made with 🔥 • Created by a 6A student • Powered by Argon</div>', unsafe_allow_html=True)
 
