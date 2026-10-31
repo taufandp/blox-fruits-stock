@@ -275,37 +275,95 @@ try:
         st.subheader("📬 Send a Message to the Admin")
         st.caption("Got a fruit stock suggestion, spotted a bug, or just want to say hi? Send me a message below!")
         
-        with st.form("contact_form"):
-            sender_name = st.text_input("Your Name / Roblox Username:", placeholder="e.g. BloxMaster99")
-            sender_email = st.text_input("Your Email (optional, so I can reply back):", placeholder="yourname@gmail.com")
-            sender_msg = st.text_area("Your Message:", placeholder="Type your message here...", height=120)
-            submitted = st.form_submit_button("🚀 Send to Admin", use_container_width=True)
+        # Client-Side Form: Submits directly from browser via Web3Forms
+        contact_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #ffffff; background: transparent; margin: 0; padding: 4px; }
+            .form-box { background: #1e1e2e; border: 1px solid #313244; border-radius: 12px; padding: 22px; max-width: 650px; }
+            label { font-size: 0.88rem; font-weight: 600; color: #cdd6f4; display: block; margin-bottom: 6px; }
+            input, textarea { width: 100%; box-sizing: border-box; background: #11111b; border: 1px solid #45475a; border-radius: 8px; color: #fff; padding: 10px 12px; font-size: 0.95rem; margin-bottom: 14px; font-family: inherit; }
+            input:focus, textarea:focus { outline: none; border-color: #a855f7; }
+            button { width: 100%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+            button:hover { opacity: 0.9; }
+            #status-msg { margin-top: 14px; font-size: 0.92rem; font-weight: 600; display: none; padding: 10px; border-radius: 6px; }
+            .status-ok { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+            .status-err { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e; }
+        </style>
+        </head>
+        <body>
+            <div class="form-box">
+                <form id="contactForm">
+                    <label>Your Name / Roblox Username:</label>
+                    <input type="text" id="senderName" placeholder="e.g. BloxMaster99" required />
 
-            if submitted:
-                if not sender_msg.strip():
-                    st.error("Please enter a message before sending!")
-                else:
-                    payload = {
-                        "access_key": "0da08451-82fe-4f81-9875-aa6627d4b3fd",
-                        "name": sender_name.strip() or "Anonymous Blox Fruits Player",
-                        "email": sender_email.strip() or "no-reply@example.com",
-                        "message": sender_msg.strip(),
-                        "subject": f"🏴‍☠️ Blox Fruits Tracker Message from {sender_name.strip() or 'Visitor'}"
+                    <label>Your Email (optional):</label>
+                    <input type="email" id="senderEmail" placeholder="yourname@gmail.com" />
+
+                    <label>Your Message:</label>
+                    <textarea id="senderMsg" rows="4" placeholder="Type your message here..." required></textarea>
+
+                    <button type="submit" id="submitBtn">🚀 Send to Admin</button>
+                    <div id="status-msg"></div>
+                </form>
+            </div>
+
+            <script>
+                const form = document.getElementById('contactForm');
+                const btn = document.getElementById('submitBtn');
+                const statusMsg = document.getElementById('status-msg');
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    btn.disabled = true;
+                    btn.innerText = "Sending...";
+                    statusMsg.style.display = "none";
+
+                    const payload = {
+                        access_key: "0da08451-82fe-4f81-9875-aa6627d4b3fd",
+                        name: document.getElementById('senderName').value.trim() || "Anonymous Player",
+                        email: document.getElementById('senderEmail').value.trim() || "no-reply@example.com",
+                        message: document.getElementById('senderMsg').value.trim(),
+                        subject: "🏴‍☠️ Blox Fruits Tracker Message"
+                    };
+
+                    try {
+                        const response = await fetch("https://api.web3forms.com/submit", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json"
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            statusMsg.className = "status-ok";
+                            statusMsg.innerText = "🎉 Message delivered directly to the Admin's inbox!";
+                            statusMsg.style.display = "block";
+                            form.reset();
+                        } else {
+                            statusMsg.className = "status-err";
+                            statusMsg.innerText = "❌ Error: " + (result.message || "Failed to send");
+                            statusMsg.style.display = "block";
+                        }
+                    } catch (err) {
+                        statusMsg.className = "status-err";
+                        statusMsg.innerText = "❌ Connection failed. Check your internet connection.";
+                        statusMsg.style.display = "block";
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerText = "🚀 Send to Admin";
                     }
-                    try:
-                        resp = requests.post(
-                            "https://api.web3forms.com/submit",
-                            json=payload,
-                            headers={"Accept": "application/json"},
-                            timeout=10
-                        )
-                        res_data = resp.json()
-                        if resp.status_code == 200 and res_data.get("success"):
-                            st.success("🎉 Message sent directly to the Admin's inbox! Thanks for reaching out.")
-                        else:
-                            st.error(f"Error: {res_data.get('message', 'Could not send message')}")
-                    except Exception as err:
-                        st.error(f"Network error: {err}")
+                });
+            </script>
+        </body>
+        </html>
+        """
+        components.html(contact_html, height=430)
 
     st.markdown('<div class="footer">Made with 🔥 • Created by a 6A student • Powered by Argon</div>', unsafe_allow_html=True)
 
